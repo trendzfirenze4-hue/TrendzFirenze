@@ -8,20 +8,31 @@ import java.util.List;
 
 @Configuration
 public class CorsConfig {
+
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration cfg = new CorsConfiguration();
-    cfg.setAllowedOrigins(List.of(
-    "http://localhost:3000",
-    "https://trendz-firenze-frontend-1m7p5jvy7-trendzfirenze4-hues-projects.vercel.app"
-));
 
-    cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+    CorsConfiguration cfg = new CorsConfiguration();
+
+    cfg.setAllowedOriginPatterns(List.of(
+        "http://localhost:3000",
+        "https://trendz-firenze-frontend.vercel.app",
+        "https://*.vercel.app"
+    ));
+
+    cfg.setAllowedMethods(List.of(
+        "GET","POST","PUT","PATCH","DELETE","OPTIONS"
+    ));
+
     cfg.setAllowedHeaders(List.of("*"));
+    cfg.setExposedHeaders(List.of("Authorization"));
     cfg.setAllowCredentials(true);
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    UrlBasedCorsConfigurationSource source =
+        new UrlBasedCorsConfigurationSource();
+
     source.registerCorsConfiguration("/**", cfg);
+
     return source;
   }
 }
