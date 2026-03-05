@@ -22,7 +22,7 @@ spring:
 
 app:
   jwt:
-    secret: "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET_64+_CHARS"
+    secret: ${JWT_SECRET}
     accessTtlMinutes: 60
 
 management:
