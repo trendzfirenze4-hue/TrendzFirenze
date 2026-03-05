@@ -33,8 +33,8 @@ public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthFilter jwtAuthF
       .requestMatchers("/api/categories/**").permitAll()
       .requestMatchers("/api/products/**").permitAll()
       .requestMatchers("/actuator/**").permitAll()
-      // .requestMatchers("/api/admin/**").hasRole("ADMIN")
-      .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+      .requestMatchers("/api/admin/**").hasRole("ADMIN")
+      // .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
       .anyRequest().authenticated()
     )
     .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

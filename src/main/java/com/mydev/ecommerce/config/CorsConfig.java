@@ -13,7 +13,7 @@ public class CorsConfig {
     CorsConfiguration cfg = new CorsConfiguration();
     cfg.setAllowedOrigins(List.of(
     "http://localhost:3000",
-    "https://trendz-firenze-frontend.vercel.app"
+    "https://trendz-firenze-frontend-1m7p5jvy7-trendzfirenze4-hues-projects.vercel.app"
 ));
 
     cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
