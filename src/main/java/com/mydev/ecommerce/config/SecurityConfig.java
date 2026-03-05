@@ -1,39 +1,3 @@
-// package com.mydev.ecommerce.config;
-
-// import com.mydev.ecommerce.auth.security.JwtAuthFilter;
-// import org.springframework.context.annotation.Bean;
-// import org.springframework.context.annotation.Configuration;
-// import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-// import org.springframework.security.web.SecurityFilterChain;
-// import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-// @Configuration
-// public class SecurityConfig {
-
-//   @Bean
-//   public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
-//     http
-//       .csrf(csrf -> csrf.disable())
-//       .cors(cors -> {})
-//       .authorizeHttpRequests(auth -> auth
-//         .requestMatchers("/api/auth/**").permitAll()
-//         .requestMatchers("/api/categories/**", "/api/products/**").permitAll()
-//         .requestMatchers("/actuator/**").permitAll()
-//         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-//         .anyRequest().authenticated()
-//       )
-//       .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
-//     return http.build();
-//   }
-// }
-
-
-
-
-
-
-
 
 
 package com.mydev.ecommerce.config;
@@ -69,7 +33,8 @@ public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthFilter jwtAuthF
       .requestMatchers("/api/categories/**").permitAll()
       .requestMatchers("/api/products/**").permitAll()
       .requestMatchers("/actuator/**").permitAll()
-      .requestMatchers("/api/admin/**").hasRole("ADMIN")
+      // .requestMatchers("/api/admin/**").hasRole("ADMIN")
+      .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
       .anyRequest().authenticated()
     )
     .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
