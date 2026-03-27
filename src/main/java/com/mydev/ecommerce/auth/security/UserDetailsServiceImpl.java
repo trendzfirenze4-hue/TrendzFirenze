@@ -21,11 +21,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     var u = userRepo.findByEmail(email)
         .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
-    // If your DB role values are "ADMIN" / "CUSTOMER"
+   
     return new org.springframework.security.core.userdetails.User(
-        u.getEmail(),
-        u.getPasswordHash(), // adjust getter name if different
-        List.of(new SimpleGrantedAuthority(u.getRole()))
-    );
+    u.getEmail(),
+    u.getPasswordHash(),
+    List.of(new SimpleGrantedAuthority("ROLE_" + u.getRole()))
+);
   }
 }

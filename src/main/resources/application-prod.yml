@@ -1,0 +1,55 @@
+# spring:
+#   datasource:
+#     url: ${DB_URL}
+#     username: ${DB_USER}
+#     password: ${DB_PASS}
+#     driver-class-name: org.postgresql.Driver
+
+#   jpa:
+#     hibernate:
+#       ddl-auto: validate
+#     open-in-view: false
+
+#   flyway:
+#     enabled: true
+
+#   servlet:
+#     multipart:
+#       max-file-size: 10MB
+#       max-request-size: 50MB
+
+# app:
+#   jwt:
+#     secret: ${JWT_SECRET}
+#     accessTtlMinutes: 60
+
+
+
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASS}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    accessTtlMinutes: 60
+
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID}
+  key-secret: ${RAZORPAY_KEY_SECRET}

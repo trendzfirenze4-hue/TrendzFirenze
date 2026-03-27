@@ -4,11 +4,26 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 public record ProductRequest(
-    @NotBlank @Size(max=200) String title,
+
+    @NotBlank
+    @Size(max = 200)
+    String title,
+
     String description,
-    @NotNull Integer priceInr,
-    @NotNull Integer stock,
-    @NotNull Long categoryId,
-    @NotNull String imagesJson // example: ["url1","url2"]
+
+    @NotNull
+    Integer priceInr,
+
+    @NotNull
+    Integer stock,
+
+    @NotNull
+    Long categoryId,
+
+    // list of image URLs
+    List<String> images
+
 ) {}

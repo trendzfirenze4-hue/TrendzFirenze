@@ -1,7 +1,10 @@
+
+
+
 package com.mydev.ecommerce.product.controller;
 
-import com.mydev.ecommerce.product.model.Product;
-import com.mydev.ecommerce.product.repository.ProductRepository;
+import com.mydev.ecommerce.product.dto.ProductResponse;
+import com.mydev.ecommerce.product.service.ProductService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -10,20 +13,21 @@ import java.util.List;
 @RequestMapping("/api/products")
 public class ProductController {
 
-  private final ProductRepository repo;
+    private final ProductService service;
 
-  public ProductController(ProductRepository repo) {
-    this.repo = repo;
-  }
+    public ProductController(ProductService service) {
+        this.service = service;
+    }
 
-  @GetMapping
-  public List<Product> list(@RequestParam(required = false) Long categoryId) {
-    if (categoryId != null) return repo.findByCategory_Id(categoryId);
-    return repo.findAll();
-  }
+    @GetMapping
+    public List<ProductResponse> list(
+            @RequestParam(required = false) Long categoryId
+    ) {
+        return service.getProducts(categoryId);
+    }
 
-  @GetMapping("/{id}")
-  public Product one(@PathVariable Long id) {
-    return repo.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
-  }
+    @GetMapping("/{id}")
+    public ProductResponse one(@PathVariable Long id) {
+        return service.getProduct(id);
+    }
 }

@@ -1,3 +1,5 @@
+
+
 package com.mydev.ecommerce.auth.security;
 
 import io.jsonwebtoken.Claims;
@@ -27,17 +29,32 @@ public class JwtAuthFilter extends GenericFilter {
     HttpServletRequest req = (HttpServletRequest) request;
     String auth = req.getHeader("Authorization");
 
+    System.out.println("JWT PATH = " + req.getRequestURI());
+    System.out.println("JWT HEADER = " + auth);
+
     if (auth != null && auth.startsWith("Bearer ")) {
       String token = auth.substring(7);
+
       try {
         Claims claims = jwtService.parseClaims(token);
-        String userId = claims.getSubject();
-        String role = (String) claims.get("role");
 
-        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
-        var authentication = new UsernamePasswordAuthenticationToken(userId, null, authorities);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-      } catch (Exception ignored) {
+        String email = claims.get("email", String.class);
+        String role = claims.get("role", String.class);
+
+        System.out.println("JWT EMAIL = " + email);
+        System.out.println("JWT ROLE = " + role);
+
+        if (email != null) {
+          var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+          var authentication =
+              new UsernamePasswordAuthenticationToken(email, null, authorities);
+
+          SecurityContextHolder.getContext().setAuthentication(authentication);
+          System.out.println("JWT AUTH SET = " + email);
+        }
+
+      } catch (Exception e) {
+        System.out.println("JWT ERROR = " + e.getClass().getName() + " :: " + e.getMessage());
         SecurityContextHolder.clearContext();
       }
     }

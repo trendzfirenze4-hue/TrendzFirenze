@@ -1,5 +1,4 @@
--- Insert Admin (password = Admin@123)
--- bcrypt hash for "Admin@123"
+-- Insert Admin
 insert into users (name, email, password_hash, role)
 values (
   'Admin',
@@ -17,10 +16,19 @@ on conflict (name) do nothing;
 -- Sample Products
 insert into products (title, description, price_inr, stock, category_id, images)
 values
-('Trendz Firenze Classic Tote', 'Premium leather tote bag', 1999, 20,
- (select id from categories where name='Tote Bags'),
- '["/images/tote1.jpg"]'::jsonb),
-
-('Trendz Firenze Sling Mini', 'Compact sling bag', 999, 40,
- (select id from categories where name='Sling Bags'),
- '["/images/sling1.jpg"]'::jsonb);
+(
+  'Trendz Firenze Classic Tote',
+  'Premium leather tote bag',
+  1999,
+  20,
+  (select id from categories where name='Tote Bags'),
+  '["/images/tote1.jpg"]'::jsonb
+),
+(
+  'Trendz Firenze Sling Mini',
+  'Compact sling bag',
+  999,
+  40,
+  (select id from categories where name='Sling Bags'),
+  '["/images/sling1.jpg"]'::jsonb
+);
