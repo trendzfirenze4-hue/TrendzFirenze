@@ -23,7 +23,6 @@ public record ProductRequest(
     @NotNull
     Long categoryId,
 
-    // list of image URLs
     List<String> images
 
 ) {}

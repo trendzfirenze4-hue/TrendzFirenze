@@ -11,17 +11,15 @@ values (
 )
 on conflict (email) do nothing;
 
-
 -- =========================
 -- Insert Categories
 -- =========================
 insert into categories (name)
-values 
+values
   ('Handbags'),
   ('Sling Bags'),
   ('Tote Bags')
 on conflict (name) do nothing;
-
 
 -- =========================
 -- Insert Sample Products
@@ -32,7 +30,8 @@ insert into products (
   price_inr,
   stock,
   category_id,
-  images
+  images,
+  created_at
 )
 values
 (
@@ -41,7 +40,8 @@ values
   1999,
   20,
   (select id from categories where name = 'Tote Bags'),
-  '["/images/tote1.jpg"]'::jsonb
+  '["/images/tote1.jpg"]'::jsonb,
+  now()
 ),
 (
   'Trendz Firenze Sling Mini',
@@ -49,5 +49,6 @@ values
   999,
   40,
   (select id from categories where name = 'Sling Bags'),
-  '["/images/sling1.jpg"]'::jsonb
+  '["/images/sling1.jpg"]'::jsonb,
+  now()
 );

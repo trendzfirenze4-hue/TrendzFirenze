@@ -1,16 +1,11 @@
-
-
-
-
-
-
 package com.mydev.ecommerce.product.model;
 
-import com.mydev.ecommerce.category.model.Category;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.mydev.ecommerce.category.model.Category;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -38,7 +33,7 @@ public class Product {
     private Integer priceInr;
 
     @Column(nullable = false)
-    private Integer stock;
+    private Integer stock = 0;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id")
@@ -54,7 +49,8 @@ public class Product {
     @OrderBy("id DESC")
     private Set<ProductReview> reviews = new LinkedHashSet<>();
 
-    @Column(name = "created_at", nullable = false)
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @Column(name = "is_active", nullable = false)

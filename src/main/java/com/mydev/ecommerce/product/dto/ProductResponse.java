@@ -1,5 +1,3 @@
-
-
 package com.mydev.ecommerce.product.dto;
 
 import java.util.List;
