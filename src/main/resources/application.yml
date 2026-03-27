@@ -42,6 +42,9 @@ app:
     secret: ${JWT_SECRET}
     accessTtlMinutes: 60
 
+
 razorpay:
-  key-id: ${RAZORPAY_KEY_ID}
-  key-secret: ${RAZORPAY_KEY_SECRET}
+  key-id: ${RAZORPAY_KEY_ID:dummy}
+  key-secret: ${RAZORPAY_KEY_SECRET:dummy}
+
+  
