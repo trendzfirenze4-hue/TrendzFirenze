@@ -1,3 +1,8 @@
+
+
+
+
+
 # spring:
 #   application:
 #     name: mydev-ecommerce
@@ -49,9 +54,24 @@
 #     secret: ${JWT_SECRET}
 #     accessTtlMinutes: 60
 
+#   file:
+#     product-upload-dir: ${PRODUCT_UPLOAD_DIR:./uploads/products}
+
 # razorpay:
 #   key-id: ${RAZORPAY_KEY_ID:dummy}
 #   key-secret: ${RAZORPAY_KEY_SECRET:dummy}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -108,9 +128,11 @@ app:
     secret: ${JWT_SECRET}
     accessTtlMinutes: 60
 
-  file:
-    product-upload-dir: ${PRODUCT_UPLOAD_DIR:./uploads/products}
-
 razorpay:
   key-id: ${RAZORPAY_KEY_ID:dummy}
   key-secret: ${RAZORPAY_KEY_SECRET:dummy}
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}

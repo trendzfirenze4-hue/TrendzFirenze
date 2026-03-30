@@ -5,7 +5,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/upload")
@@ -25,10 +26,8 @@ public class ImageUploadController {
         List<String> urls = new ArrayList<>();
 
         for (MultipartFile file : files) {
-
-            String url = storageService.saveFile(file);
-
-            urls.add(url);
+            FileStorageService.UploadResult result = storageService.saveFile(file);
+            urls.add(result.imageUrl());
         }
 
         return urls;
