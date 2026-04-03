@@ -1,6 +1,9 @@
 
 
 
+
+
+
 // package com.mydev.ecommerce.common.service;
 
 // import com.cloudinary.Cloudinary;
@@ -23,7 +26,26 @@
 //         this.cloudinary = cloudinary;
 //     }
 
+//     /**
+//      * ✅ EXISTING METHOD (UNCHANGED)
+//      * Used for PRODUCT uploads
+//      */
 //     public UploadResult saveFile(MultipartFile file) throws IOException {
+//         return saveFile(file, "trendz-firenze/products");
+//     }
+
+//     /**
+//      * 🔥 NEW METHOD (FOR GIFT BOX)
+//      */
+//     public UploadResult saveGiftBoxFile(MultipartFile file) throws IOException {
+//         return saveFile(file, "trendz-firenze/gift-boxes");
+//     }
+
+//     /**
+//      * 🔥 CORE COMMON METHOD (DO NOT CALL DIRECTLY FROM CONTROLLER)
+//      */
+//     public UploadResult saveFile(MultipartFile file, String folder) throws IOException {
+
 //         if (file == null || file.isEmpty()) {
 //             throw new RuntimeException("File is empty");
 //         }
@@ -33,7 +55,10 @@
 //             throw new RuntimeException("Only image files are allowed");
 //         }
 
-//         String original = StringUtils.cleanPath(file.getOriginalFilename() == null ? "image" : file.getOriginalFilename());
+//         String original = StringUtils.cleanPath(
+//                 file.getOriginalFilename() == null ? "image" : file.getOriginalFilename()
+//         );
+
 //         String safeName = sanitize(original);
 //         String publicId = UUID.randomUUID() + "_" + safeName;
 
@@ -41,7 +66,7 @@
 //         Map<String, Object> result = cloudinary.uploader().upload(
 //                 file.getBytes(),
 //                 ObjectUtils.asMap(
-//                         "folder", "trendz-firenze/products",
+//                         "folder", folder,
 //                         "public_id", publicId,
 //                         "resource_type", "image"
 //                 )
@@ -98,6 +123,10 @@
 
 
 
+
+
+
+
 package com.mydev.ecommerce.common.service;
 
 import com.cloudinary.Cloudinary;
@@ -120,24 +149,18 @@ public class FileStorageService {
         this.cloudinary = cloudinary;
     }
 
-    /**
-     * ✅ EXISTING METHOD (UNCHANGED)
-     * Used for PRODUCT uploads
-     */
     public UploadResult saveFile(MultipartFile file) throws IOException {
         return saveFile(file, "trendz-firenze/products");
     }
 
-    /**
-     * 🔥 NEW METHOD (FOR GIFT BOX)
-     */
     public UploadResult saveGiftBoxFile(MultipartFile file) throws IOException {
         return saveFile(file, "trendz-firenze/gift-boxes");
     }
 
-    /**
-     * 🔥 CORE COMMON METHOD (DO NOT CALL DIRECTLY FROM CONTROLLER)
-     */
+    public UploadResult saveBrandShowcaseFile(MultipartFile file) throws IOException {
+        return saveFile(file, "trendz-firenze/brand-showcases");
+    }
+
     public UploadResult saveFile(MultipartFile file, String folder) throws IOException {
 
         if (file == null || file.isEmpty()) {
