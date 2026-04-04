@@ -47,6 +47,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/giftsets/**").permitAll()
                 .requestMatchers("/api/admin/gift-boxes/**").hasRole("ADMIN")
 
+
+                .requestMatchers("/api/hero-sections/**").permitAll()
+                .requestMatchers("/api/admin/hero-sections/**").hasRole("ADMIN")
+
                 // admin routes
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
