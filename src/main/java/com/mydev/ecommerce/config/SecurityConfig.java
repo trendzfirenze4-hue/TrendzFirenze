@@ -37,6 +37,12 @@ public class SecurityConfig {
                 .requestMatchers("/images/**").permitAll()
 
 
+
+
+
+                .requestMatchers("/api/brand-showcases/**").permitAll()
+
+
                 .requestMatchers("/api/gift-boxes/**").permitAll()
                 .requestMatchers("/api/giftsets/**").permitAll()
                 .requestMatchers("/api/admin/gift-boxes/**").hasRole("ADMIN")
