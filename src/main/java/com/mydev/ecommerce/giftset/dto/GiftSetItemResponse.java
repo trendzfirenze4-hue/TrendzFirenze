@@ -7,6 +7,8 @@ import lombok.Getter;
 @Builder
 public class GiftSetItemResponse {
 
+    private Long cartItemId;
+
     private Long productId;
     private String productTitle;
     private Integer productPriceInr;
