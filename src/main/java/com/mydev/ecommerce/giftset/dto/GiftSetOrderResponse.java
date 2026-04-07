@@ -1,12 +1,10 @@
-
-
-package com.mydev.ecommerce.order.dto;
+package com.mydev.ecommerce.giftset.dto;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-public record OrderResponse(
+public record GiftSetOrderResponse(
         Long id,
         String orderNumber,
         String status,
@@ -26,6 +24,6 @@ public record OrderResponse(
         String addressPincode,
         String addressCountry,
         OffsetDateTime createdAt,
-        List<OrderItemResponse> items
+        List<GiftSetOrderItemResponse> items
 ) {
 }

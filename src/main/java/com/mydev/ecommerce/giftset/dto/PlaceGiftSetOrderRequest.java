@@ -1,11 +1,8 @@
-
-
-
-package com.mydev.ecommerce.order.dto;
+package com.mydev.ecommerce.giftset.dto;
 
 import jakarta.validation.constraints.NotNull;
 
-public record PlaceOrderRequest(
+public record PlaceGiftSetOrderRequest(
         @NotNull Long addressId,
         @NotNull String paymentMethod,
         String couponCode

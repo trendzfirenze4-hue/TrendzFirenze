@@ -1,7 +1,8 @@
+package com.mydev.ecommerce.giftset.model;
 
-
-package com.mydev.ecommerce.order.model;
-
+import com.mydev.ecommerce.order.model.OrderStatus;
+import com.mydev.ecommerce.order.model.PaymentMethod;
+import com.mydev.ecommerce.order.model.PaymentStatus;
 import com.mydev.ecommerce.user.model.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -13,10 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "gift_set_orders")
 @Getter
 @Setter
-public class Order {
+public class GiftSetOrder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -93,7 +94,7 @@ public class Order {
     private OffsetDateTime createdAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> items = new ArrayList<>();
+    private List<GiftSetOrderItem> items = new ArrayList<>();
 
     @PrePersist
     public void onCreate() {
