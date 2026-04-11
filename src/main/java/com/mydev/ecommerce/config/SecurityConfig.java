@@ -113,9 +113,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/images/**").permitAll()
                 .requestMatchers("/api/brand-showcases/**").permitAll()
+                .requestMatchers("/api/hero-sections/**").permitAll()
                 .requestMatchers("/api/gift-boxes/**").permitAll()
                 .requestMatchers("/api/giftsets/**").permitAll()
-                .requestMatchers("/api/hero-sections/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/bulk-orders").permitAll()
+                .requestMatchers("/api/admin/bulk-orders/**").hasRole("ADMIN")
+                
 
                 // admin routes
                 .requestMatchers("/api/admin/gift-boxes/**").hasRole("ADMIN")
