@@ -48,6 +48,19 @@
 // }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 package com.mydev.ecommerce.email.service;
 
 import jakarta.mail.internet.MimeMessage;
@@ -75,10 +88,11 @@ public class EmailService {
     private String fromName;
 
     public void sendHtmlEmail(String to, String subject, String htmlBody) {
-        log.info("MAIL FLOW START -> enabled={}, to={}, subject={}", mailEnabled, to, subject);
+
+        log.info("🔥 MAIL FLOW START -> enabled={}, to={}, subject={}", mailEnabled, to, subject);
 
         if (!mailEnabled) {
-            log.warn("Mail disabled. Skipping email to {}", to);
+            log.warn("❌ Mail disabled. Skipping email to {}", to);
             return;
         }
 
@@ -93,10 +107,11 @@ public class EmailService {
 
             mailSender.send(message);
 
-            log.info("EMAIL SENT SUCCESS -> to={}", to);
+            log.info("✅ EMAIL SENT SUCCESS -> to={}", to);
+
         } catch (Exception e) {
-            log.error("EMAIL FAILED -> to={}", to, e);
-            throw new RuntimeException("Failed to send email to " + to, e);
+            // ❌ DO NOT THROW — just log
+            log.error("❌ EMAIL FAILED -> to={}", to, e);
         }
     }
 }
