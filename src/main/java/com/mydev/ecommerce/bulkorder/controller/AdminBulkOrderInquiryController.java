@@ -33,4 +33,12 @@ public class AdminBulkOrderInquiryController {
                                                  @Valid @RequestBody BulkOrderStatusUpdateRequest req) {
         return bulkOrderInquiryService.updateStatus(id, req);
     }
+
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+    bulkOrderInquiryService.delete(id);
+    }
+
+
 }

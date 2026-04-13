@@ -5,6 +5,8 @@ import com.mydev.ecommerce.bulkorder.dto.BulkOrderInquiryResponse;
 import com.mydev.ecommerce.bulkorder.dto.BulkOrderStatusUpdateRequest;
 import com.mydev.ecommerce.bulkorder.model.BulkOrderInquiry;
 import com.mydev.ecommerce.bulkorder.repository.BulkOrderInquiryRepository;
+import com.mydev.ecommerce.email.dto.BulkInquiryEmailPayload;
+import com.mydev.ecommerce.email.service.BulkOrderEmailService;
 import com.mydev.ecommerce.product.model.Product;
 import com.mydev.ecommerce.product.model.ProductImage;
 import com.mydev.ecommerce.product.repository.ProductRepository;
@@ -19,11 +21,16 @@ public class BulkOrderInquiryService {
 
     private final BulkOrderInquiryRepository bulkOrderInquiryRepository;
     private final ProductRepository productRepository;
+    private final BulkOrderEmailService bulkOrderEmailService;
 
-    public BulkOrderInquiryService(BulkOrderInquiryRepository bulkOrderInquiryRepository,
-                                   ProductRepository productRepository) {
+    public BulkOrderInquiryService(
+            BulkOrderInquiryRepository bulkOrderInquiryRepository,
+            ProductRepository productRepository,
+            BulkOrderEmailService bulkOrderEmailService
+    ) {
         this.bulkOrderInquiryRepository = bulkOrderInquiryRepository;
         this.productRepository = productRepository;
+        this.bulkOrderEmailService = bulkOrderEmailService;
     }
 
     @Transactional
@@ -45,6 +52,29 @@ public class BulkOrderInquiryService {
         inquiry.setMessage(req.message() == null ? null : req.message().trim());
 
         BulkOrderInquiry saved = bulkOrderInquiryRepository.save(inquiry);
+
+        String productImageUrl = null;
+        if (product.getImages() != null && !product.getImages().isEmpty()) {
+            ProductImage firstImage = product.getImages().get(0);
+            productImageUrl = firstImage != null ? firstImage.getImageUrl() : null;
+        }
+
+        BulkInquiryEmailPayload emailPayload = BulkInquiryEmailPayload.builder()
+                .customerName(saved.getCustomerName())
+                .customerEmail(saved.getEmail())
+                .phone(saved.getPhone())
+                .companyName(saved.getCompanyName())
+                .quantity(saved.getQuantity())
+                .message(saved.getMessage())
+                .productTitle(product.getTitle())
+                .productImageUrl(productImageUrl)
+                .productPriceInr(product.getPriceInr())
+                .createdAt(saved.getCreatedAt())
+                .build();
+
+        bulkOrderEmailService.sendAdminNotification(emailPayload);
+        bulkOrderEmailService.sendCustomerAcknowledgement(emailPayload);
+
         return map(saved);
     }
 
@@ -69,7 +99,8 @@ public class BulkOrderInquiryService {
                 .orElseThrow(() -> new EntityNotFoundException("Bulk inquiry not found"));
 
         inquiry.setStatus(req.status());
-        return map(bulkOrderInquiryRepository.save(inquiry));
+        BulkOrderInquiry updated = bulkOrderInquiryRepository.save(inquiry);
+        return map(updated);
     }
 
     private BulkOrderInquiryResponse map(BulkOrderInquiry inquiry) {
@@ -96,5 +127,13 @@ public class BulkOrderInquiryService {
                 inquiry.getStatus(),
                 inquiry.getCreatedAt()
         );
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        BulkOrderInquiry inquiry = bulkOrderInquiryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Bulk inquiry not found"));
+
+        bulkOrderInquiryRepository.delete(inquiry);
     }
 }

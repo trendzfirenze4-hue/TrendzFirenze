@@ -1,9 +1,3 @@
-
-
-
-
-
-
 spring:
   application:
     name: mydev-ecommerce
@@ -38,6 +32,22 @@ spring:
       max-file-size: 50MB
       max-request-size: 50MB
 
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
 server:
   port: ${PORT:8080}
 
@@ -54,6 +64,11 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     accessTtlMinutes: 60
+  mail:
+    enabled: ${MAIL_ENABLED:true}
+    from-email: ${MAIL_FROM_EMAIL}
+    from-name: ${MAIL_FROM_NAME:Trendz Firenze}
+    admin-email: ${MAIL_ADMIN_EMAIL}
 
 razorpay:
   key-id: ${RAZORPAY_KEY_ID:dummy}
