@@ -1,3 +1,5 @@
+
+
 // package com.mydev.ecommerce.email.service;
 
 // import jakarta.mail.internet.MimeMessage;
@@ -6,7 +8,6 @@
 // import org.springframework.beans.factory.annotation.Value;
 // import org.springframework.mail.javamail.JavaMailSender;
 // import org.springframework.mail.javamail.MimeMessageHelper;
-// import org.springframework.scheduling.annotation.Async;
 // import org.springframework.stereotype.Service;
 
 // @Slf4j
@@ -25,24 +26,31 @@
 //     @Value("${app.mail.from-name:Trendz Firenze}")
 //     private String fromName;
 
-//     @Async("mailExecutor")
 //     public void sendHtmlEmail(String to, String subject, String htmlBody) {
+
+//         log.info("🔥 MAIL FLOW START -> enabled={}, to={}, subject={}", mailEnabled, to, subject);
+
 //         if (!mailEnabled) {
-//             log.info("Mail disabled. Skipping email to {}", to);
+//             log.warn("❌ Mail disabled. Skipping email to {}", to);
 //             return;
 //         }
 
 //         try {
 //             MimeMessage message = mailSender.createMimeMessage();
 //             MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
+
 //             helper.setFrom(fromEmail, fromName);
 //             helper.setTo(to);
 //             helper.setSubject(subject);
 //             helper.setText(htmlBody, true);
+
 //             mailSender.send(message);
-//             log.info("Email sent successfully to {}", to);
+
+//             log.info("✅ EMAIL SENT SUCCESS -> to={}", to);
+
 //         } catch (Exception e) {
-//             log.error("Failed to send email to {}", to, e);
+//             // ❌ DO NOT THROW — just log
+//             log.error("❌ EMAIL FAILED -> to={}", to, e);
 //         }
 //     }
 // }
@@ -60,23 +68,26 @@
 
 
 
-
 package com.mydev.ecommerce.email.service;
 
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private static final String BREVO_SEND_EMAIL_URL = "https://api.brevo.com/v3/smtp/email";
+
+    private final RestClient restClient = RestClient.create();
 
     @Value("${app.mail.enabled:true}")
     private boolean mailEnabled;
@@ -87,8 +98,10 @@ public class EmailService {
     @Value("${app.mail.from-name:Trendz Firenze}")
     private String fromName;
 
-    public void sendHtmlEmail(String to, String subject, String htmlBody) {
+    @Value("${app.mail.brevo.api-key}")
+    private String brevoApiKey;
 
+    public void sendHtmlEmail(String to, String subject, String htmlBody) {
         log.info("🔥 MAIL FLOW START -> enabled={}, to={}, subject={}", mailEnabled, to, subject);
 
         if (!mailEnabled) {
@@ -97,21 +110,31 @@ public class EmailService {
         }
 
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
+            Map<String, Object> payload = Map.of(
+                    "sender", Map.of(
+                            "name", fromName,
+                            "email", fromEmail
+                    ),
+                    "to", List.of(
+                            Map.of("email", to)
+                    ),
+                    "subject", subject,
+                    "htmlContent", htmlBody
+            );
 
-            helper.setFrom(fromEmail, fromName);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(htmlBody, true);
+            String response = restClient.post()
+                    .uri(BREVO_SEND_EMAIL_URL)
+                    .header("accept", "application/json")
+                    .header("api-key", brevoApiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .body(String.class);
 
-            mailSender.send(message);
-
-            log.info("✅ EMAIL SENT SUCCESS -> to={}", to);
+            log.info("✅ EMAIL SENT SUCCESS -> to={}, response={}", to, response);
 
         } catch (Exception e) {
-            // ❌ DO NOT THROW — just log
-            log.error("❌ EMAIL FAILED -> to={}", to, e);
+            log.error("❌ EMAIL FAILED -> to={}, reason={}", to, e.getMessage(), e);
         }
     }
 }
