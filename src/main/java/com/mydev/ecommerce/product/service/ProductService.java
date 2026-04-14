@@ -1,5 +1,8 @@
 
 
+
+
+
 package com.mydev.ecommerce.product.service;
 
 import com.mydev.ecommerce.product.dto.ProductResponse;
@@ -66,6 +69,8 @@ public class ProductService {
                 p.getTitle(),
                 p.getDescription(),
                 p.getPriceInr(),
+                p.getMrpInr(),
+                p.getDiscountPercent(),
                 p.getStock(),
                 p.getCategory().getName(),
                 images,
