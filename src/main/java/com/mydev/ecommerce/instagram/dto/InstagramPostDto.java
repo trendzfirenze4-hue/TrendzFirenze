@@ -1,7 +1,11 @@
 
 
 
+
 package com.mydev.ecommerce.instagram.dto;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class InstagramPostDto {
 
@@ -14,6 +18,8 @@ public class InstagramPostDto {
     private String timestamp;
     private String alt;
     private boolean video;
+    private boolean carousel;
+    private List<InstagramMediaItemDto> items = new ArrayList<>();
 
     public InstagramPostDto() {
     }
@@ -27,7 +33,9 @@ public class InstagramPostDto {
             String permalink,
             String timestamp,
             String alt,
-            boolean video
+            boolean video,
+            boolean carousel,
+            List<InstagramMediaItemDto> items
     ) {
         this.id = id;
         this.caption = caption;
@@ -38,6 +46,8 @@ public class InstagramPostDto {
         this.timestamp = timestamp;
         this.alt = alt;
         this.video = video;
+        this.carousel = carousel;
+        this.items = items != null ? items : new ArrayList<>();
     }
 
     public String getId() {
@@ -76,6 +86,14 @@ public class InstagramPostDto {
         return video;
     }
 
+    public boolean isCarousel() {
+        return carousel;
+    }
+
+    public List<InstagramMediaItemDto> getItems() {
+        return items;
+    }
+
     public void setId(String id) {
         this.id = id;
     }
@@ -110,5 +128,13 @@ public class InstagramPostDto {
 
     public void setVideo(boolean video) {
         this.video = video;
+    }
+
+    public void setCarousel(boolean carousel) {
+        this.carousel = carousel;
+    }
+
+    public void setItems(List<InstagramMediaItemDto> items) {
+        this.items = items != null ? items : new ArrayList<>();
     }
 }

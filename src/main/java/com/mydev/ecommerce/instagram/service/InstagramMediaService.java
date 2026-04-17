@@ -4,12 +4,14 @@ package com.mydev.ecommerce.instagram.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mydev.ecommerce.instagram.dto.InstagramMediaItemDto;
 import com.mydev.ecommerce.instagram.dto.InstagramPostDto;
 import com.mydev.ecommerce.instagram.entity.InstagramAuth;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -47,23 +49,14 @@ public class InstagramMediaService {
             throw new RuntimeException("Instagram token expired. Manual reconnect required.");
         }
 
-        String fields = String.join(",",
-                "id",
-                "caption",
-                "media_type",
-                "media_url",
-                "thumbnail_url",
-                "permalink",
-                "timestamp",
-                "alt_text"
-        );
-
         String appSecretProof = createAppSecretProof(auth.getAccessToken(), appSecret);
 
-        String url = "https://graph.facebook.com/" + graphVersion + "/" + auth.getInstagramUserId() + "/media" +
-                "?fields=" + fields +
-                "&access_token=" + auth.getAccessToken() +
-                "&appsecret_proof=" + appSecretProof;
+        String url = UriComponentsBuilder
+                .fromHttpUrl("https://graph.facebook.com/" + graphVersion + "/" + auth.getInstagramUserId() + "/media")
+                .queryParam("fields", "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,alt_text")
+                .queryParam("access_token", auth.getAccessToken())
+                .queryParam("appsecret_proof", appSecretProof)
+                .toUriString();
 
         try {
             String response = restTemplate.getForObject(url, String.class);
@@ -76,7 +69,6 @@ public class InstagramMediaService {
                 for (JsonNode item : data) {
                     String mediaType = item.path("media_type").asText("");
 
-                    // Allow images, carousels, and videos/reels
                     if (!"IMAGE".equals(mediaType)
                             && !"CAROUSEL_ALBUM".equals(mediaType)
                             && !"VIDEO".equals(mediaType)) {
@@ -98,6 +90,34 @@ public class InstagramMediaService {
                     }
 
                     boolean isVideo = "VIDEO".equals(mediaType);
+                    boolean isCarousel = "CAROUSEL_ALBUM".equals(mediaType);
+
+                    List<InstagramMediaItemDto> items;
+
+                    if (isCarousel) {
+                        items = fetchCarouselChildren(id, auth.getAccessToken(), appSecretProof, altText);
+
+                        if (items.isEmpty() && mediaUrl != null && !mediaUrl.isBlank()) {
+                            items.add(new InstagramMediaItemDto(
+                                    id,
+                                    "IMAGE",
+                                    mediaUrl,
+                                    thumbnailUrl,
+                                    altText,
+                                    false
+                            ));
+                        }
+                    } else {
+                        items = new ArrayList<>();
+                        items.add(new InstagramMediaItemDto(
+                                id,
+                                mediaType,
+                                mediaUrl,
+                                thumbnailUrl,
+                                altText,
+                                isVideo
+                        ));
+                    }
 
                     posts.add(new InstagramPostDto(
                             id,
@@ -108,7 +128,9 @@ public class InstagramMediaService {
                             permalink,
                             timestamp,
                             altText,
-                            isVideo
+                            isVideo,
+                            isCarousel,
+                            items
                     ));
 
                     if (posts.size() >= limit) {
@@ -134,6 +156,58 @@ public class InstagramMediaService {
             throw new RuntimeException(
                     e.getMessage() != null ? e.getMessage() : "Unexpected Instagram fetch error"
             );
+        }
+    }
+
+    private List<InstagramMediaItemDto> fetchCarouselChildren(
+            String mediaId,
+            String accessToken,
+            String appSecretProof,
+            String altText
+    ) {
+        List<InstagramMediaItemDto> items = new ArrayList<>();
+
+        String childrenUrl = UriComponentsBuilder
+                .fromHttpUrl("https://graph.facebook.com/" + graphVersion + "/" + mediaId + "/children")
+                .queryParam("fields", "id,media_type,media_url,thumbnail_url")
+                .queryParam("access_token", accessToken)
+                .queryParam("appsecret_proof", appSecretProof)
+                .toUriString();
+
+        try {
+            String childrenResponse = restTemplate.getForObject(childrenUrl, String.class);
+            JsonNode childrenRoot = objectMapper.readTree(childrenResponse);
+            JsonNode childrenData = childrenRoot.get("data");
+
+            if (childrenData != null && childrenData.isArray()) {
+                for (JsonNode child : childrenData) {
+                    String childId = child.path("id").asText("");
+                    String childMediaType = child.path("media_type").asText("");
+                    String childMediaUrl = child.path("media_url").asText("");
+                    String childThumbnailUrl = child.path("thumbnail_url").asText("");
+                    boolean childVideo = "VIDEO".equals(childMediaType);
+
+                    if (!"IMAGE".equals(childMediaType) && !"VIDEO".equals(childMediaType)) {
+                        continue;
+                    }
+
+                    items.add(new InstagramMediaItemDto(
+                            childId,
+                            childMediaType,
+                            childMediaUrl,
+                            childThumbnailUrl,
+                            altText,
+                            childVideo
+                    ));
+                }
+            }
+
+            return items;
+
+        } catch (HttpStatusCodeException e) {
+            return items;
+        } catch (Exception e) {
+            return items;
         }
     }
 
