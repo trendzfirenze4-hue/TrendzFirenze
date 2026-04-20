@@ -138,11 +138,17 @@
 
 
 
+
+
+
+
 package com.mydev.ecommerce.instagram.service;
 
 import com.mydev.ecommerce.instagram.dto.InstagramRefreshResponse;
 import com.mydev.ecommerce.instagram.entity.InstagramAuth;
 import com.mydev.ecommerce.instagram.repository.InstagramAuthRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -152,6 +158,8 @@ import java.util.Optional;
 
 @Service
 public class InstagramTokenService {
+
+    private static final Logger log = LoggerFactory.getLogger(InstagramTokenService.class);
 
     private final InstagramAuthRepository instagramAuthRepository;
 
@@ -197,6 +205,11 @@ public class InstagramTokenService {
         return forceRefresh();
     }
 
+    /**
+     * Current flow only checks token state.
+     * If you later add actual Instagram refresh API logic,
+     * replace the body of this method.
+     */
     public InstagramRefreshResponse forceRefresh() {
         InstagramAuth auth = getActiveAuthOrThrow();
 
@@ -209,6 +222,9 @@ public class InstagramTokenService {
                     true
             );
         }
+
+        log.info("Instagram token check passed. expiresAt={}, refreshedAt={}",
+                auth.getExpiresAt(), auth.getRefreshedAt());
 
         return new InstagramRefreshResponse(
                 true,
@@ -225,44 +241,58 @@ public class InstagramTokenService {
             Optional<InstagramAuth> authOpt = getActiveAuth();
 
             if (authOpt.isEmpty()) {
-                System.out.println("Instagram token not configured yet.");
+                log.info("Instagram token not configured yet.");
                 return;
             }
 
             InstagramAuth auth = authOpt.get();
 
             if (auth.isExpired()) {
-                System.err.println("Instagram token expired. Manual reconnect required.");
+                log.warn("Instagram token expired. Manual reconnect required.");
                 return;
             }
 
             if (auth.shouldRefresh(refreshThresholdDays)) {
-                System.out.println("Instagram token is nearing expiry. Manual reconnect recommended soon.");
+                log.warn("Instagram token is nearing expiry. Manual reconnect recommended soon. expiresAt={}",
+                        auth.getExpiresAt());
+            } else {
+                log.info("Instagram token health check OK. expiresAt={}", auth.getExpiresAt());
             }
         } catch (Exception e) {
-            System.err.println("Instagram scheduled check failed: " + e.getMessage());
+            log.error("Instagram scheduled token check failed.", e);
         }
     }
 
-    public InstagramAuth saveInitialLongLivedToken(String instagramUserId, String longLivedAccessToken, int expiresInSeconds) {
-        InstagramAuth existing = instagramAuthRepository.findFirstByActiveTrueOrderByIdDesc().orElse(null);
+    public InstagramAuth saveInitialLongLivedToken(String instagramUserId,
+                                                   String longLivedAccessToken,
+                                                   int expiresInSeconds) {
+        LocalDateTime now = LocalDateTime.now();
+
+        InstagramAuth existing = instagramAuthRepository
+                .findFirstByActiveTrueOrderByIdDesc()
+                .orElse(null);
 
         if (existing != null) {
             existing.setInstagramUserId(instagramUserId);
             existing.setAccessToken(longLivedAccessToken);
-            existing.setExpiresAt(LocalDateTime.now().plusSeconds(expiresInSeconds));
-            existing.setRefreshedAt(LocalDateTime.now());
+            existing.setExpiresAt(now.plusSeconds(expiresInSeconds));
+            existing.setRefreshedAt(now);
             existing.setActive(true);
-            return instagramAuthRepository.save(existing);
+
+            InstagramAuth saved = instagramAuthRepository.save(existing);
+            log.info("Instagram token updated successfully. expiresAt={}", saved.getExpiresAt());
+            return saved;
         }
 
         InstagramAuth auth = new InstagramAuth();
         auth.setInstagramUserId(instagramUserId);
         auth.setAccessToken(longLivedAccessToken);
-        auth.setExpiresAt(LocalDateTime.now().plusSeconds(expiresInSeconds));
-        auth.setRefreshedAt(LocalDateTime.now());
+        auth.setExpiresAt(now.plusSeconds(expiresInSeconds));
+        auth.setRefreshedAt(now);
         auth.setActive(true);
 
-        return instagramAuthRepository.save(auth);
+        InstagramAuth saved = instagramAuthRepository.save(auth);
+        log.info("Instagram token created successfully. expiresAt={}", saved.getExpiresAt());
+        return saved;
     }
 }

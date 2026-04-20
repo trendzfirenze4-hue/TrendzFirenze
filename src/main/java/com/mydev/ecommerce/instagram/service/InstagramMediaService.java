@@ -1,12 +1,16 @@
 
 
+
 // package com.mydev.ecommerce.instagram.service;
 
+// import com.fasterxml.jackson.core.type.TypeReference;
 // import com.fasterxml.jackson.databind.JsonNode;
 // import com.fasterxml.jackson.databind.ObjectMapper;
 // import com.mydev.ecommerce.instagram.dto.InstagramMediaItemDto;
 // import com.mydev.ecommerce.instagram.dto.InstagramPostDto;
 // import com.mydev.ecommerce.instagram.entity.InstagramAuth;
+// import com.mydev.ecommerce.instagram.entity.InstagramMediaCache;
+// import com.mydev.ecommerce.instagram.repository.InstagramMediaCacheRepository;
 // import org.springframework.beans.factory.annotation.Value;
 // import org.springframework.stereotype.Service;
 // import org.springframework.web.client.HttpStatusCodeException;
@@ -16,13 +20,17 @@
 // import javax.crypto.Mac;
 // import javax.crypto.spec.SecretKeySpec;
 // import java.nio.charset.StandardCharsets;
+// import java.time.LocalDateTime;
 // import java.util.ArrayList;
 // import java.util.List;
 
 // @Service
 // public class InstagramMediaService {
 
+//     private static final String CACHE_KEY = "latest_posts";
+
 //     private final InstagramTokenService instagramTokenService;
+//     private final InstagramMediaCacheRepository cacheRepository;
 //     private final RestTemplate restTemplate;
 //     private final ObjectMapper objectMapper;
 
@@ -32,17 +40,99 @@
 //     @Value("${instagram.app-secret}")
 //     private String appSecret;
 
+//     @Value("${instagram.cache.refresh-limit:20}")
+//     private int cacheRefreshLimit;
+
 //     public InstagramMediaService(
 //             InstagramTokenService instagramTokenService,
+//             InstagramMediaCacheRepository cacheRepository,
 //             RestTemplate restTemplate,
 //             ObjectMapper objectMapper
 //     ) {
 //         this.instagramTokenService = instagramTokenService;
+//         this.cacheRepository = cacheRepository;
 //         this.restTemplate = restTemplate;
 //         this.objectMapper = objectMapper;
 //     }
 
-//     public List<InstagramPostDto> fetchLatestMediaPosts(int limit) {
+//     public List<InstagramPostDto> getLatestMediaPosts(int limit) {
+//         List<InstagramPostDto> cached = readCache();
+
+//         if (!cached.isEmpty()) {
+//             return cached.stream().limit(limit).toList();
+//         }
+
+//         try {
+//             List<InstagramPostDto> fresh = fetchFromInstagram(Math.max(limit, cacheRefreshLimit));
+//             saveCache(fresh);
+//             return fresh.stream().limit(limit).toList();
+//         } catch (Exception e) {
+//             throw new RuntimeException("Instagram fetch failed and cache is empty: " + e.getMessage(), e);
+//         }
+//     }
+
+//     public List<InstagramPostDto> refreshCacheNow() {
+//         List<InstagramPostDto> fresh = fetchFromInstagram(cacheRefreshLimit);
+//         saveCache(fresh);
+//         return fresh;
+//     }
+
+//     public LocalDateTime getCacheUpdatedAt() {
+//         return cacheRepository.findByCacheKey(CACHE_KEY)
+//                 .map(InstagramMediaCache::getUpdatedAt)
+//                 .orElse(null);
+//     }
+
+//     private List<InstagramPostDto> readCache() {
+//         try {
+//             return cacheRepository.findByCacheKey(CACHE_KEY)
+//                     .map(cache -> {
+//                         try {
+//                             String payload = cache.getPayloadJson();
+
+//                             if (payload == null || payload.isBlank()) {
+//                                 return new ArrayList<InstagramPostDto>();
+//                             }
+
+//                             JsonNode root = objectMapper.readTree(payload);
+
+//                             if (!root.isArray()) {
+//                                 System.err.println("Invalid Instagram cache payload. Expected JSON array.");
+//                                 return new ArrayList<InstagramPostDto>();
+//                             }
+
+//                             return objectMapper.readValue(
+//                                     payload,
+//                                     new TypeReference<List<InstagramPostDto>>() {}
+//                             );
+//                         } catch (Exception e) {
+//                             System.err.println("Failed to parse Instagram cache: " + e.getMessage());
+//                             return new ArrayList<InstagramPostDto>();
+//                         }
+//                     })
+//                     .orElseGet(ArrayList::new);
+//         } catch (Exception e) {
+//             System.err.println("Instagram cache read failed: " + e.getMessage());
+//             return new ArrayList<>();
+//         }
+//     }
+
+//     private void saveCache(List<InstagramPostDto> posts) {
+//         try {
+//             InstagramMediaCache cache = cacheRepository.findByCacheKey(CACHE_KEY)
+//                     .orElseGet(InstagramMediaCache::new);
+
+//             cache.setCacheKey(CACHE_KEY);
+//             cache.setPayloadJson(objectMapper.writeValueAsString(posts));
+//             cache.setUpdatedAt(LocalDateTime.now());
+
+//             cacheRepository.save(cache);
+//         } catch (Exception e) {
+//             throw new RuntimeException("Failed to save Instagram cache: " + e.getMessage(), e);
+//         }
+//     }
+
+//     private List<InstagramPostDto> fetchFromInstagram(int limit) {
 //         InstagramAuth auth = instagramTokenService.getActiveAuthOrThrow();
 
 //         if (auth.isExpired()) {
@@ -150,11 +240,12 @@
 //                 }
 //             } catch (Exception ignored) {
 //             }
-//             throw new RuntimeException(message);
+//             throw new RuntimeException(message, e);
 
 //         } catch (Exception e) {
 //             throw new RuntimeException(
-//                     e.getMessage() != null ? e.getMessage() : "Unexpected Instagram fetch error"
+//                     e.getMessage() != null ? e.getMessage() : "Unexpected Instagram fetch error",
+//                     e
 //             );
 //         }
 //     }
@@ -203,10 +294,8 @@
 //             }
 
 //             return items;
-
-//         } catch (HttpStatusCodeException e) {
-//             return items;
 //         } catch (Exception e) {
+//             System.err.println("Failed to fetch Instagram carousel children for mediaId " + mediaId + ": " + e.getMessage());
 //             return items;
 //         }
 //     }
@@ -231,10 +320,11 @@
 //             }
 //             return hex.toString();
 //         } catch (Exception e) {
-//             throw new RuntimeException("Failed to generate appsecret_proof");
+//             throw new RuntimeException("Failed to generate appsecret_proof", e);
 //         }
 //     }
 // }
+
 
 
 
@@ -254,7 +344,10 @@ import com.mydev.ecommerce.instagram.dto.InstagramPostDto;
 import com.mydev.ecommerce.instagram.entity.InstagramAuth;
 import com.mydev.ecommerce.instagram.entity.InstagramMediaCache;
 import com.mydev.ecommerce.instagram.repository.InstagramMediaCacheRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
@@ -266,10 +359,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class InstagramMediaService {
 
+    private static final Logger log = LoggerFactory.getLogger(InstagramMediaService.class);
     private static final String CACHE_KEY = "latest_posts";
 
     private final InstagramTokenService instagramTokenService;
@@ -310,14 +405,50 @@ public class InstagramMediaService {
             saveCache(fresh);
             return fresh.stream().limit(limit).toList();
         } catch (Exception e) {
-            throw new RuntimeException("Instagram fetch failed and cache is empty: " + e.getMessage(), e);
+            log.error("Instagram fetch failed and cache is empty.", e);
+            throw new RuntimeException("Instagram fetch failed and cache is empty.", e);
         }
     }
 
     public List<InstagramPostDto> refreshCacheNow() {
         List<InstagramPostDto> fresh = fetchFromInstagram(cacheRefreshLimit);
         saveCache(fresh);
+        log.info("Instagram media cache refreshed manually. items={}", fresh.size());
         return fresh;
+    }
+
+    @Scheduled(cron = "${instagram.media-refresh-cron:0 */20 * * * *}")
+    public void scheduledMediaRefresh() {
+        try {
+            Optional<InstagramAuth> authOpt = instagramTokenService.getActiveAuth();
+
+            if (authOpt.isEmpty()) {
+                log.info("Instagram media refresh skipped. No active auth configured.");
+                return;
+            }
+
+            InstagramAuth auth = authOpt.get();
+
+            if (auth.isExpired()) {
+                log.warn("Instagram media refresh skipped. Token expired.");
+                return;
+            }
+
+            List<InstagramPostDto> fresh = fetchFromInstagram(cacheRefreshLimit);
+            saveCache(fresh);
+
+            log.info("Instagram media cache auto-refreshed successfully. items={}, updatedAt={}",
+                    fresh.size(), LocalDateTime.now());
+
+        } catch (Exception e) {
+            LocalDateTime cachedAt = getCacheUpdatedAt();
+            if (cachedAt != null) {
+                log.warn("Instagram media refresh failed. Existing cache will continue to serve. cacheUpdatedAt={}",
+                        cachedAt, e);
+            } else {
+                log.error("Instagram media refresh failed and no cache is available.", e);
+            }
+        }
     }
 
     public LocalDateTime getCacheUpdatedAt() {
@@ -340,7 +471,7 @@ public class InstagramMediaService {
                             JsonNode root = objectMapper.readTree(payload);
 
                             if (!root.isArray()) {
-                                System.err.println("Invalid Instagram cache payload. Expected JSON array.");
+                                log.warn("Invalid Instagram cache payload. Expected JSON array.");
                                 return new ArrayList<InstagramPostDto>();
                             }
 
@@ -349,13 +480,13 @@ public class InstagramMediaService {
                                     new TypeReference<List<InstagramPostDto>>() {}
                             );
                         } catch (Exception e) {
-                            System.err.println("Failed to parse Instagram cache: " + e.getMessage());
+                            log.error("Failed to parse Instagram cache.", e);
                             return new ArrayList<InstagramPostDto>();
                         }
                     })
                     .orElseGet(ArrayList::new);
         } catch (Exception e) {
-            System.err.println("Instagram cache read failed: " + e.getMessage());
+            log.error("Instagram cache read failed.", e);
             return new ArrayList<>();
         }
     }
@@ -371,7 +502,8 @@ public class InstagramMediaService {
 
             cacheRepository.save(cache);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to save Instagram cache: " + e.getMessage(), e);
+            log.error("Failed to save Instagram cache.", e);
+            throw new RuntimeException("Failed to save Instagram cache.", e);
         }
     }
 
@@ -389,6 +521,7 @@ public class InstagramMediaService {
                 .queryParam("fields", "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,alt_text")
                 .queryParam("access_token", auth.getAccessToken())
                 .queryParam("appsecret_proof", appSecretProof)
+                .queryParam("limit", limit)
                 .toUriString();
 
         try {
@@ -483,6 +616,7 @@ public class InstagramMediaService {
                 }
             } catch (Exception ignored) {
             }
+
             throw new RuntimeException(message, e);
 
         } catch (Exception e) {
@@ -538,7 +672,7 @@ public class InstagramMediaService {
 
             return items;
         } catch (Exception e) {
-            System.err.println("Failed to fetch Instagram carousel children for mediaId " + mediaId + ": " + e.getMessage());
+            log.warn("Failed to fetch Instagram carousel children for mediaId={}", mediaId, e);
             return items;
         }
     }
