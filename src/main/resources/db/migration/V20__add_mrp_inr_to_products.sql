@@ -1,2 +1,0 @@
-ALTER TABLE products
-ADD COLUMN mrp_inr INTEGER;
