@@ -1,3 +1,4 @@
+
 // package com.mydev.ecommerce.user.repository;
 
 // import com.mydev.ecommerce.user.model.User;
@@ -6,17 +7,13 @@
 // import java.util.Optional;
 
 // public interface UserRepository extends JpaRepository<User, Long> {
-//   Optional<User> findByEmail(String email);
-//   boolean existsByEmail(String email);
+
+//     Optional<User> findByEmail(String email);
+
+//     Optional<User> findByEmailIgnoreCase(String email);
+
+//     boolean existsByEmail(String email);
 // }
-
-
-
-
-
-
-
-
 
 
 
@@ -35,6 +32,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     Optional<User> findByEmailIgnoreCase(String email);
+
+    Optional<User> findByPhone(String phone);
 
     boolean existsByEmail(String email);
 }

@@ -212,8 +212,6 @@
 
 
 
-
-
 spring:
   application:
     name: mydev-ecommerce
@@ -278,6 +276,13 @@ app:
 
   password-reset:
     expiry-minutes: ${PASSWORD_RESET_EXPIRY_MINUTES:30}
+
+  otp:
+    provider: ${OTP_PROVIDER:DEV_LOG}
+
+  mobile-password-reset:
+    expiry-minutes: ${MOBILE_PASSWORD_RESET_EXPIRY_MINUTES:5}
+    max-attempts: ${MOBILE_PASSWORD_RESET_MAX_ATTEMPTS:5}
 
   whatsapp:
     enabled: ${WHATSAPP_ENABLED:false}
