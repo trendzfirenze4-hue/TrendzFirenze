@@ -120,6 +120,13 @@ public class SecurityConfig {
                         "/api/instagram/**"
                 ).permitAll()
 
+
+                .requestMatchers(
+                 HttpMethod.POST,
+                "/api/newsletter/subscribe"
+                 ).permitAll()
+
+
                 /* =====================================
                    BULK ORDER
                 ===================================== */
