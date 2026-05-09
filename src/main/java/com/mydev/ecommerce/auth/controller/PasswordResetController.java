@@ -61,6 +61,10 @@ import com.mydev.ecommerce.auth.dto.MobilePasswordResetRequest;
 import com.mydev.ecommerce.auth.dto.ResetPasswordRequest;
 import com.mydev.ecommerce.auth.service.MobilePasswordResetService;
 import com.mydev.ecommerce.auth.service.PasswordResetService;
+
+import com.mydev.ecommerce.auth.dto.MobilePasswordResetByEmailRequest;
+import com.mydev.ecommerce.auth.dto.PasswordResetOptionsResponse;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -80,6 +84,38 @@ public class PasswordResetController {
        POST /api/auth/forgot-password
        POST /api/auth/reset-password
     ================================ */
+
+
+
+
+
+
+
+
+
+
+    @GetMapping("/password-reset/options")
+public ResponseEntity<PasswordResetOptionsResponse> passwordResetOptions(
+        @RequestParam String email
+) {
+    return ResponseEntity.ok(passwordResetService.getResetOptions(email));
+}
+
+@PostMapping("/forgot-password/mobile/by-email")
+public ResponseEntity<MessageResponse> forgotPasswordMobileByEmail(
+        @Valid @RequestBody MobilePasswordResetByEmailRequest request
+) {
+    mobilePasswordResetService.requestMobileOtpByEmail(request);
+
+    return ResponseEntity.ok(
+            new MessageResponse(
+                    "If an account exists with this email and mobile number, an OTP has been sent."
+            )
+    );
+}
+
+
+
 
     @PostMapping("/forgot-password")
     public ResponseEntity<MessageResponse> forgotPassword(

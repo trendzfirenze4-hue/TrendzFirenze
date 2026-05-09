@@ -5,6 +5,8 @@ import com.mydev.ecommerce.auth.dto.MobilePasswordResetRequest;
 import com.mydev.ecommerce.auth.model.MobilePasswordResetOtp;
 import com.mydev.ecommerce.auth.otp.OtpSender;
 import com.mydev.ecommerce.auth.repository.MobilePasswordResetOtpRepository;
+import com.mydev.ecommerce.auth.dto.MobilePasswordResetByEmailRequest;
+
 import com.mydev.ecommerce.user.model.User;
 import com.mydev.ecommerce.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -70,6 +72,63 @@ public class MobilePasswordResetService {
             log.warn("Mobile password reset requested for non-existing phone={}", phone);
         });
     }
+
+
+
+
+
+
+
+
+
+
+    @Transactional
+public void requestMobileOtpByEmail(MobilePasswordResetByEmailRequest request) {
+    String cleanEmail = request.email() == null
+            ? ""
+            : request.email().trim().toLowerCase();
+
+    userRepository.findByEmailIgnoreCase(cleanEmail).ifPresent(user -> {
+        String phone = normalizePhone(user.getPhone());
+
+        if (phone.isBlank()) {
+            log.warn("Mobile OTP requested but phone missing. userId={}", user.getId());
+            return;
+        }
+
+        expireOldActiveOtps(user);
+
+        String otp = generateSixDigitOtp();
+        String otpHash = hashOtp(phone, otp);
+
+        MobilePasswordResetOtp resetOtp = new MobilePasswordResetOtp();
+        resetOtp.setUser(user);
+        resetOtp.setPhone(phone);
+        resetOtp.setOtpHash(otpHash);
+        resetOtp.setExpiresAt(LocalDateTime.now().plusMinutes(expiryMinutes));
+        resetOtp.setAttemptCount(0);
+        resetOtp.setCreatedAt(LocalDateTime.now());
+
+        otpRepository.save(resetOtp);
+        otpSender.sendOtp(phone, otp);
+
+        log.info("Mobile password reset OTP by email triggered for userId={}", user.getId());
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     @Transactional
     public void resetPasswordWithMobileOtp(MobilePasswordResetConfirmRequest request) {

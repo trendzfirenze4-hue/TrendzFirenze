@@ -3,6 +3,8 @@ package com.mydev.ecommerce.auth.service;
 import com.mydev.ecommerce.auth.dto.ResetPasswordRequest;
 import com.mydev.ecommerce.auth.model.PasswordResetToken;
 import com.mydev.ecommerce.auth.repository.PasswordResetTokenRepository;
+import com.mydev.ecommerce.auth.dto.PasswordResetOptionsResponse;
+
 import com.mydev.ecommerce.email.service.EmailService;
 import com.mydev.ecommerce.user.model.User;
 import com.mydev.ecommerce.user.repository.UserRepository;
@@ -82,6 +84,55 @@ public class PasswordResetService {
         });
     }
 
+
+
+
+
+
+    @Transactional(readOnly = true)
+public PasswordResetOptionsResponse getResetOptions(String email) {
+    String cleanEmail = normalizeEmail(email);
+
+    return userRepository.findByEmailIgnoreCase(cleanEmail)
+            .map(user -> new PasswordResetOptionsResponse(
+                    true,
+                    user.getEmail(),
+                    user.getPhone() != null && !user.getPhone().isBlank(),
+                    maskPhone(user.getPhone())
+            ))
+            .orElse(new PasswordResetOptionsResponse(
+                    false,
+                    cleanEmail,
+                    false,
+                    null
+            ));
+}
+
+private String maskPhone(String phone) {
+    String clean = phone == null ? "" : phone.replaceAll("\\D", "");
+
+    if (clean.length() < 4) {
+        return "XXXXXXXX";
+    }
+
+    return "XXXXXX" + clean.substring(clean.length() - 4);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
         if (!request.getNewPassword().equals(request.getRepeatPassword())) {
@@ -119,6 +170,10 @@ public class PasswordResetService {
 
         log.info("Password reset success for userId={}", user.getId());
     }
+
+
+
+    
 
     private void expireOldActiveTokens(User user) {
         List<PasswordResetToken> activeTokens =
