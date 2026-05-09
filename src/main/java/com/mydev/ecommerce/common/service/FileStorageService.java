@@ -1,9 +1,6 @@
 
 
 
-
-
-
 // package com.mydev.ecommerce.common.service;
 
 // import com.cloudinary.Cloudinary;
@@ -26,24 +23,18 @@
 //         this.cloudinary = cloudinary;
 //     }
 
-//     /**
-//      * ✅ EXISTING METHOD (UNCHANGED)
-//      * Used for PRODUCT uploads
-//      */
 //     public UploadResult saveFile(MultipartFile file) throws IOException {
 //         return saveFile(file, "trendz-firenze/products");
 //     }
 
-//     /**
-//      * 🔥 NEW METHOD (FOR GIFT BOX)
-//      */
 //     public UploadResult saveGiftBoxFile(MultipartFile file) throws IOException {
 //         return saveFile(file, "trendz-firenze/gift-boxes");
 //     }
 
-//     /**
-//      * 🔥 CORE COMMON METHOD (DO NOT CALL DIRECTLY FROM CONTROLLER)
-//      */
+//     public UploadResult saveBrandShowcaseFile(MultipartFile file) throws IOException {
+//         return saveFile(file, "trendz-firenze/brand-showcases");
+//     }
+
 //     public UploadResult saveFile(MultipartFile file, String folder) throws IOException {
 
 //         if (file == null || file.isEmpty()) {
@@ -51,9 +42,17 @@
 //         }
 
 //         String contentType = file.getContentType();
-//         if (contentType == null || !contentType.startsWith("image/")) {
-//             throw new RuntimeException("Only image files are allowed");
-//         }
+//         if (
+//         contentType == null ||
+//         (
+//                 !contentType.startsWith("image/") &&
+//                 !contentType.equals("video/mp4") &&
+//                 !contentType.equals("video/webm") &&
+//                 !contentType.equals("video/quicktime")
+//         )
+// ) {
+//     throw new RuntimeException("Only image or video files allowed");
+// }
 
 //         String original = StringUtils.cleanPath(
 //                 file.getOriginalFilename() == null ? "image" : file.getOriginalFilename()
@@ -127,6 +126,11 @@
 
 
 
+
+
+
+
+
 package com.mydev.ecommerce.common.service;
 
 import com.cloudinary.Cloudinary;
@@ -168,12 +172,21 @@ public class FileStorageService {
         }
 
         String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new RuntimeException("Only image files are allowed");
+
+        if (
+                contentType == null ||
+                (
+                        !contentType.startsWith("image/") &&
+                        !contentType.equals("video/mp4") &&
+                        !contentType.equals("video/webm") &&
+                        !contentType.equals("video/quicktime")
+                )
+        ) {
+            throw new RuntimeException("Only image or video files allowed");
         }
 
         String original = StringUtils.cleanPath(
-                file.getOriginalFilename() == null ? "image" : file.getOriginalFilename()
+                file.getOriginalFilename() == null ? "media" : file.getOriginalFilename()
         );
 
         String safeName = sanitize(original);
@@ -185,18 +198,18 @@ public class FileStorageService {
                 ObjectUtils.asMap(
                         "folder", folder,
                         "public_id", publicId,
-                        "resource_type", "image"
+                        "resource_type", "auto"
                 )
         );
 
-        String imageUrl = (String) result.get("secure_url");
+        String fileUrl = (String) result.get("secure_url");
         String cloudinaryPublicId = (String) result.get("public_id");
 
-        if (imageUrl == null || imageUrl.isBlank()) {
-            throw new RuntimeException("Cloudinary did not return image URL");
+        if (fileUrl == null || fileUrl.isBlank()) {
+            throw new RuntimeException("Cloudinary did not return file URL");
         }
 
-        return new UploadResult(imageUrl, cloudinaryPublicId);
+        return new UploadResult(fileUrl, cloudinaryPublicId);
     }
 
     public void deleteFile(String publicId) {
@@ -207,16 +220,16 @@ public class FileStorageService {
         try {
             cloudinary.uploader().destroy(
                     publicId,
-                    ObjectUtils.asMap("resource_type", "image")
+                    ObjectUtils.asMap("resource_type", "auto")
             );
         } catch (Exception e) {
-            throw new RuntimeException("Failed to delete image from Cloudinary", e);
+            throw new RuntimeException("Failed to delete file from Cloudinary", e);
         }
     }
 
     private String sanitize(String name) {
         if (name == null || name.isBlank()) {
-            return "image";
+            return "media";
         }
 
         String cleaned = Normalizer.normalize(name, Normalizer.Form.NFKC);
@@ -224,7 +237,7 @@ public class FileStorageService {
         cleaned = cleaned.replaceAll("[^a-zA-Z0-9._-]", "_");
 
         if (cleaned.isBlank()) {
-            return "image";
+            return "media";
         }
 
         return cleaned;
