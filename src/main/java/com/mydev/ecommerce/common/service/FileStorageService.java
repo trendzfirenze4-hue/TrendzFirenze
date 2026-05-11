@@ -309,8 +309,6 @@
 
 
 
-
-
 package com.mydev.ecommerce.common.service;
 
 import com.cloudinary.Cloudinary;
@@ -330,6 +328,8 @@ import java.util.UUID;
 public class FileStorageService {
 
     private static final Logger log = LoggerFactory.getLogger(FileStorageService.class);
+
+    private static final long LARGE_FILE_LIMIT = 10L * 1024L * 1024L; // 10MB
 
     private final Cloudinary cloudinary;
 
@@ -354,12 +354,10 @@ public class FileStorageService {
         log.info("========== Cloudinary Upload Started ==========");
 
         if (file == null) {
-            log.error("Upload failed: MultipartFile is null");
             throw new RuntimeException("File is null");
         }
 
         if (file.isEmpty()) {
-            log.error("Upload failed: File is empty");
             throw new RuntimeException("File is empty");
         }
 
@@ -376,12 +374,12 @@ public class FileStorageService {
         boolean isVideo =
                 "video/mp4".equals(contentType) ||
                 "video/webm".equals(contentType) ||
-                "video/quicktime".equals(contentType);
-
-        log.info("Detected file type -> image: {}, video: {}", isImage, isVideo);
+                "video/quicktime".equals(contentType) ||
+                "video/x-msvideo".equals(contentType) ||
+                "video/x-matroska".equals(contentType);
 
         if (!isImage && !isVideo) {
-            log.error("Upload failed: Unsupported file type: {}", contentType);
+            log.error("Unsupported file type: {}", contentType);
             throw new RuntimeException("Only image or video files allowed");
         }
 
@@ -390,7 +388,7 @@ public class FileStorageService {
         );
 
         String safeName = sanitize(original);
-        String publicId = UUID.randomUUID() + "_" + safeName;
+        String publicId = UUID.randomUUID() + "_" + removeExtension(safeName);
         String resourceType = isVideo ? "video" : "image";
 
         log.info("Sanitized filename: {}", safeName);
@@ -398,41 +396,54 @@ public class FileStorageService {
         log.info("Cloudinary resource type: {}", resourceType);
 
         try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> result = cloudinary.uploader().upload(
-                    file.getBytes(),
-                    ObjectUtils.asMap(
-                            "folder", folder,
-                            "public_id", publicId,
-                            "resource_type", resourceType,
-                            "chunk_size", 6000000
-                    )
+            Map<String, Object> options = ObjectUtils.asMap(
+                    "folder", folder,
+                    "public_id", publicId,
+                    "resource_type", resourceType
             );
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result =
+                    (isVideo || fileSize > LARGE_FILE_LIMIT)
+                            ? cloudinary.uploader().uploadLarge(
+                                    file.getInputStream(),
+                                    ObjectUtils.asMap(
+                                            "folder", folder,
+                                            "public_id", publicId,
+                                            "resource_type", resourceType,
+                                            "chunk_size", 6000000
+                                    )
+                              )
+                            : cloudinary.uploader().upload(
+                                    file.getBytes(),
+                                    options
+                              );
 
             log.info("Cloudinary raw response keys: {}", result.keySet());
 
             String fileUrl = (String) result.get("secure_url");
             String cloudinaryPublicId = (String) result.get("public_id");
+            String returnedResourceType = String.valueOf(result.get("resource_type"));
 
             log.info("Cloudinary secure_url: {}", fileUrl);
             log.info("Cloudinary public_id: {}", cloudinaryPublicId);
-            log.info("Cloudinary resource_type returned: {}", result.get("resource_type"));
+            log.info("Cloudinary resource_type returned: {}", returnedResourceType);
 
             if (fileUrl == null || fileUrl.isBlank()) {
-                log.error("Upload failed: Cloudinary did not return secure_url. Response: {}", result);
+                log.error("Cloudinary response without secure_url: {}", result);
                 throw new RuntimeException("Cloudinary did not return file URL");
             }
 
             log.info("Upload successful");
             log.info("========== Cloudinary Upload Finished ==========");
 
-            return new UploadResult(fileUrl, cloudinaryPublicId, resourceType);
+            return new UploadResult(fileUrl, cloudinaryPublicId, returnedResourceType);
 
         } catch (IOException e) {
-            log.error("Upload failed due to IOException. Message: {}", e.getMessage(), e);
+            log.error("Upload failed due to IOException: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
-            log.error("Upload failed due to unexpected error. Message: {}", e.getMessage(), e);
+            log.error("Cloudinary upload failed: {}", e.getMessage(), e);
             throw new RuntimeException("Cloudinary upload failed: " + e.getMessage(), e);
         }
     }
@@ -462,8 +473,13 @@ public class FileStorageService {
             log.info("========== Cloudinary Delete Finished ==========");
 
         } catch (Exception e) {
-            log.error("Failed to delete file from Cloudinary. publicId: {}, resourceType: {}, error: {}",
-                    publicId, finalResourceType, e.getMessage(), e);
+            log.error(
+                    "Failed to delete file from Cloudinary. publicId: {}, resourceType: {}, error: {}",
+                    publicId,
+                    finalResourceType,
+                    e.getMessage(),
+                    e
+            );
             throw new RuntimeException("Failed to delete file from Cloudinary", e);
         }
     }
@@ -494,15 +510,18 @@ public class FileStorageService {
             log.info("========== Cloudinary Delete Finished ==========");
 
         } catch (Exception e) {
-            log.error("Failed to delete file from Cloudinary. publicId: {}, error: {}",
-                    publicId, e.getMessage(), e);
+            log.error(
+                    "Failed to delete file from Cloudinary. publicId: {}, error: {}",
+                    publicId,
+                    e.getMessage(),
+                    e
+            );
             throw new RuntimeException("Failed to delete file from Cloudinary", e);
         }
     }
 
     private String sanitize(String name) {
         if (name == null || name.isBlank()) {
-            log.warn("Filename was null or blank. Using default name: media");
             return "media";
         }
 
@@ -511,11 +530,23 @@ public class FileStorageService {
         cleaned = cleaned.replaceAll("[^a-zA-Z0-9._-]", "_");
 
         if (cleaned.isBlank()) {
-            log.warn("Filename became blank after sanitizing. Using default name: media");
             return "media";
         }
 
         return cleaned;
+    }
+
+    private String removeExtension(String filename) {
+        if (filename == null || filename.isBlank()) {
+            return "media";
+        }
+
+        int lastDot = filename.lastIndexOf(".");
+        if (lastDot > 0) {
+            return filename.substring(0, lastDot);
+        }
+
+        return filename;
     }
 
     public record UploadResult(
