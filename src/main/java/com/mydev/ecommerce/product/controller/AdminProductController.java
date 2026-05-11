@@ -59,8 +59,28 @@ public class AdminProductController {
 
 
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+// public Map<String, String> uploadImage(@RequestPart("file") MultipartFile file) throws IOException {
+//     FileStorageService.UploadResult uploaded = fileStorageService.saveFile(file);
+
+//     return Map.of(
+//             "imageUrl", uploaded.imageUrl(),
+//             "publicId", uploaded.publicId(),
+//             "resourceType", uploaded.resourceType()
+//     );
+// }
+
+
+
+
+@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 public Map<String, String> uploadImage(@RequestPart("file") MultipartFile file) throws IOException {
+
+    System.out.println("UPLOAD CONTROLLER HIT");
+    System.out.println("FILE NAME = " + file.getOriginalFilename());
+    System.out.println("FILE TYPE = " + file.getContentType());
+    System.out.println("FILE SIZE = " + file.getSize());
+
     FileStorageService.UploadResult uploaded = fileStorageService.saveFile(file);
 
     return Map.of(
@@ -69,7 +89,6 @@ public Map<String, String> uploadImage(@RequestPart("file") MultipartFile file) 
             "resourceType", uploaded.resourceType()
     );
 }
-
 
 
 
